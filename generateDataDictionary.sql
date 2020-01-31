@@ -6,7 +6,7 @@
     -- all the tables in a SQL Server database.  
     --
     -- Example to run from powershell:
-    -- sqlcmd -S falpvm-dfoster\sqlexpress -d TylerWorkflowDB -i generateDataDictionary.sql | findstr /v /c:"---" > twf.html
+    -- sqlcmd -S falpvm-dfoster\sqlexpress -d AdventureWorks2016  -i generateDataDictionary.sql | findstr /v /c:"---" > wf.html
     -- 
     -- Optional sqlcmd command line parameters that can be set with -v var = "value"
     -- Note that if these are not defined on the command line, then 'scripting variable not defined' error messages will 
@@ -15,7 +15,7 @@
     -- includeViews - true/false, defaults to false
     -- includeTableMenu - true/false, defaults to true 
     -- includeSchema - comma-delimited string of schema to include, defaults to all, surround with quotes if providing multiple schemas
-    --     Example: sqlcmd -S fddb2\dev16cs -d dev16cs_david.foster -v includeSchema = "Purchasing,AssetManagement" -i generateDataDictionary.sql | findstr /v /c:"---" > mun.html
+    --     Example: -v includeViews = true -v includeTableMenu = false  -v includeSchema = "Person, Sales"
     -- ==================================================================================================
     --
     -- The uses the sqlcmd command line tool to invoke the generateDataDictionary.sql script (or whatever you've
