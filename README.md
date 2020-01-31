@@ -1,11 +1,13 @@
 # generateDataDictionary
 
 This TSQL script is meant to be invoked externally to generate a HTML data dictionary/schema of 
-all the tables in a SQL Server database.  It was originally based off of the script from here: [https://gist.github.com/mwinckler/2577364](https://gist.github.com/mwinckler/2577364)
+all the tables in a SQL Server database.  It includes foreign key reference links.
+
+It was originally based off of the script from here: [https://gist.github.com/mwinckler/2577364](https://gist.github.com/mwinckler/2577364)
  
 Example to run from powershell.  This assumes Windows Authorization to the DB server, otherwise pass credentials.  See [sqlcmd utility](https://docs.microsoft.com/en-us/sql/tools/sqlcmd-utility) for more info.
 ```
-sqlcmd -S falpvm-dfoster\sqlexpress -d TaskDB -i generateDataDictionary.sql | findstr /v /c:"---" > twf.html
+sqlcmd -S falpvm-dfoster\sqlexpress -d AdventureWorks2016  -i generateDataDictionary.sql | findstr /v /c:"---" > wf.html
 ```
  
 Optional sqlcmd command line parameters that can be set with -v var = "value"
@@ -19,7 +21,7 @@ appear, but can be ignored
      
 Example
 ```
-    -v includeViews = true -v includeTableMenu = false  -v includeSchema = "Purchasing,AssetManagement" 
+    -v includeViews = true -v includeTableMenu = false  -v includeSchema = "Person, Sales" 
 ```
 ---
  
@@ -31,3 +33,5 @@ Example
  
  The bootstrap CSS is included from a CDN for minimal styling.  Currently only data for tables is 
  included, no views.
+
+ ![screenshot](screenshot.png)
