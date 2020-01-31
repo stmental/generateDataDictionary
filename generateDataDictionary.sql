@@ -75,16 +75,6 @@
                 WHERE O.type = 'U' OR O.type = 'V'
                 AND S.name in (select schemaName from @UseSchemas) 
                 order by S.name, O.name 
-
-/*
-        Select distinct Table_name, Table_schema
-        FROM INFORMATION_SCHEMA.COLUMNS
-        --put any exclusions here
-        --where table_name not like '%old' 
-        --where Table_name = 'ELMAH_Error' -- dmf
-        where Table_schema in (select schemaName from @UseSchemas) 
-        order by Table_schema, Table_name
-        */
     else
         DECLARE Tbls CURSOR 
         FOR
@@ -300,15 +290,6 @@
             CAST(CASE WHEN IS_VIEW = 1 then '<b>(V)</b>' else '&nbsp;' end as varchar) +
                  '</div>' 
                 from #TableList
-            /*
-            SELECT '<div>'+ 
-            '<a style="margin-right: 10px" href="#' + SCHEMA_NAME + '.' + TABLE_NAME + '">' + SCHEMA_NAME + '.' + TABLE_NAME + '</a>' + 
-            CAST(CASE WHEN sys.tables.name is null then '<b>(V)</b>' else '&nbsp;' end as varchar) +
-                 '</div>' 
-                from #TableList
-                LEFT OUTER JOIN sys.tables on sys.tables.name = TABLE_NAME
-                LEFT OUTER JOIN sys.schemas on sys.tables.object_id = sys.tables.schema_id
-                */
             PRINT '</div>'
         PRINT '</div>'
     END
