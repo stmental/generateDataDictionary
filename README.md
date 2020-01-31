@@ -11,10 +11,11 @@ sqlcmd -S falpvm-dfoster\sqlexpress -d TaskDB -i generateDataDictionary.sql | fi
 Optional sqlcmd command line parameters that can be set with -v var = "value"
 Note that if these are not defined on the command line, then 'scripting variable not defined' error messages will 
 appear, but can be ignored
+
 ---
-**includeViews** - true/false, defaults to false
-**includeTableMenu** - true/false, defaults to true 
-**includeSchema** - comma-delimited string of schema to include, defaults to all, surround with quotes if providing multiple schemas
+* **includeViews** - true/false, defaults to false
+* **includeTableMenu** - true/false, defaults to true 
+* **includeSchema** - comma-delimited string of schema to include, defaults to all, surround with quotes if providing multiple schemas
      
 Example
 ```
