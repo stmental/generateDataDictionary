@@ -52,6 +52,7 @@
 
 	DECLARE @TableName nvarchar(35)
 	DECLARE @TableSchema nvarchar(256)
+    DECLARE @IsView bit
 	DECLARE @TablesReferencingPK nvarchar(max)
 	DECLARE @FKTableRef nvarchar(max)
 
@@ -59,28 +60,40 @@
        DROP TABLE #TableList
     CREATE TABLE #TableList (
         SCHEMA_NAME sysname collate database_default NOT NULL,
-        TABLE_NAME sysname collate database_default NOT NULL)
+        TABLE_NAME sysname collate database_default NOT NULL,
+        IS_VIEW bit NOT NULL)
 
 
     if @useViews = 'true' 
         DECLARE Tbls CURSOR 
         FOR
+            SELECT O.name ObjectName,
+                S.name SchemaName,
+                CAST(CASE WHEN O.type = 'V' then 1 else 0 end as bit)
+            FROM Sys.Objects O INNER JOIN Sys.Schemas S
+                ON O.schema_id = S.schema_id
+                WHERE O.type = 'U' OR O.type = 'V'
+                AND S.name in (select schemaName from @UseSchemas) 
+                order by S.name, O.name 
+
+/*
         Select distinct Table_name, Table_schema
         FROM INFORMATION_SCHEMA.COLUMNS
         --put any exclusions here
         --where table_name not like '%old' 
         --where Table_name = 'ELMAH_Error' -- dmf
         where Table_schema in (select schemaName from @UseSchemas) 
-        order by Table_name
+        order by Table_schema, Table_name
+        */
     else
         DECLARE Tbls CURSOR 
         FOR
-        select sys.tables.name, sys.schemas.name 
+        select sys.tables.name, sys.schemas.name, 0 
         from sys.tables
         INNER JOIN sys.schemas 
                 ON sys.tables.schema_id = sys.schemas.schema_id
         where sys.schemas.name in (select schemaName from @UseSchemas) 
-        order by sys.tables.name
+        order by sys.schemas.name, sys.tables.name
 
 	OPEN Tbls
 
@@ -135,7 +148,7 @@
 			ON col2.column_id = referenced_column_id AND col2.object_id = tab2.object_id
 
 	FETCH NEXT FROM Tbls
-	INTO @TableName, @TableSchema
+	INTO @TableName, @TableSchema, @IsView
 
 	WHILE @@FETCH_STATUS = 0
 	BEGIN
@@ -146,9 +159,12 @@
 	and name = 'microsoft_database_tools_support' and minor_id = 0)
     BEGIN
 
-        INSERT INTO #TableList VALUES (@TableSchema, @TableName)
+        INSERT INTO #TableList VALUES (@TableSchema, @TableName, @IsView)
 
-        Print '<h2><a name="' + @TableSchema + '.' + @TableName + '">' + @TableSchema + '.' +  @TableName + '</a></h2>'
+        Print '<h2><a name="' + @TableSchema + '.' + @TableName + '">' + @TableSchema + '.' +  @TableName + '</a>'
+        IF @IsView = 1
+            PRINT '<b>(View)</b>'
+        PRINT '</h2>'
         PRINT '<p>'
         --Get the Description of the table
         --Characters 1-250
@@ -228,7 +244,14 @@
         , '')
         + '</td>',
         '</tr>'
-        FROM sys.tables AS tbl
+        FROM (
+            SELECT O.name ObjectName,
+                S.name SchemaName,
+                O.object_id,
+                O.type
+            FROM Sys.Objects O INNER JOIN Sys.Schemas S
+                ON O.schema_id = S.schema_id
+        ) AS tbl
         INNER JOIN sys.all_columns AS clmns
         ON clmns.object_id=tbl.object_id
         LEFT OUTER JOIN sys.indexes AS idx
@@ -250,7 +273,7 @@
         ON exprop.major_id = clmns.object_id
         AND exprop.minor_id = clmns.column_id
         AND exprop.name = 'MS_Description'
-        WHERE (tbl.name = @TableName 
+        WHERE (tbl.ObjectName = @TableName 
         --and exprop.class = 1  --I don't want to include comments on indexes
         ) 
         ORDER BY clmns.column_id ASC
@@ -261,7 +284,7 @@
     END
 
 	FETCH NEXT FROM Tbls
-	INTO @TableName, @TableSchema
+	INTO @TableName, @TableSchema, @IsView
 	END
 
     PRINT '</div>'
@@ -270,10 +293,23 @@
         PRINT '<div style="grid-area:a; border: 1px black solid; padding: 10px" >'
         PRINT '<label for="toggle"><h3>Menu</h3></label>'
         PRINT '<input type="checkbox" id="toggle" style="opacity: 0">'
-        PRINT '<div id="table-menu">'
-        --PRINT '<h3>Tables</h3>'
-        SELECT '<div><a href="#' + SCHEMA_NAME + '.' + TABLE_NAME + '">' + SCHEMA_NAME + '.' + TABLE_NAME + '</a></div>' from #TableList
-        PRINT '</div>'
+            PRINT '<div id="table-menu">'
+            --PRINT '<h3>Tables</h3>'
+            SELECT '<div>'+ 
+            '<a style="margin-right: 10px" href="#' + SCHEMA_NAME + '.' + TABLE_NAME + '">' + SCHEMA_NAME + '.' + TABLE_NAME + '</a>' + 
+            CAST(CASE WHEN IS_VIEW = 1 then '<b>(V)</b>' else '&nbsp;' end as varchar) +
+                 '</div>' 
+                from #TableList
+            /*
+            SELECT '<div>'+ 
+            '<a style="margin-right: 10px" href="#' + SCHEMA_NAME + '.' + TABLE_NAME + '">' + SCHEMA_NAME + '.' + TABLE_NAME + '</a>' + 
+            CAST(CASE WHEN sys.tables.name is null then '<b>(V)</b>' else '&nbsp;' end as varchar) +
+                 '</div>' 
+                from #TableList
+                LEFT OUTER JOIN sys.tables on sys.tables.name = TABLE_NAME
+                LEFT OUTER JOIN sys.schemas on sys.tables.object_id = sys.tables.schema_id
+                */
+            PRINT '</div>'
         PRINT '</div>'
     END
 	PRINT '</body></HTML>'
